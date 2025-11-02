@@ -1,0 +1,328 @@
+openapi: 3.0.1
+info:
+  title: MCP Server RPC API
+  version: v1
+servers:
+  - url: http://localhost:3000
+paths:
+  /rpc:
+    post:
+      summary: JSON-RPC 2.0 endpoint
+      description: >
+        Endpoint único que implementa JSON‑RPC 2.0. En "method" indique la
+        operación (por ejemplo: "partidos.list", "partidos.get", "jugador.by_team").
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                jsonrpc:
+                  type: string
+                  example: "2.0"
+                method:
+                  type: string
+                params:
+                  type: object
+                id:
+                  oneOf:
+                    - type: integer
+                    - type: string
+              required:
+                - jsonrpc
+                - method
+            examples:
+              partidosList:
+                summary: listar partidos
+                value:
+                  jsonrpc: "2.0"
+                  method: "partidos.list"
+                  params: {}
+                  id: 1
+              partidosGet:
+                summary: obtener partido por id
+                value:
+                  jsonrpc: "2.0"
+                  method: "partidos.get"
+                  params:
+                    id: 123
+                  id: 2
+              partidosResultados:
+                summary: resultados de partidos
+                value:
+                  jsonrpc: "2.0"
+                  method: "partidos.resultados"
+                  params: {}
+                  id: 3
+              jugadorList:
+                summary: listar jugadores
+                value:
+                  jsonrpc: "2.0"
+                  method: "jugador.list"
+                  params: {}
+                  id: 4
+              jugadorGet:
+                summary: obtener jugador por id
+                value:
+                  jsonrpc: "2.0"
+                  method: "jugador.get"
+                  params:
+                    id: 10
+                  id: 5
+              jugadorByTeam:
+                summary: jugadores por equipo
+                value:
+                  jsonrpc: "2.0"
+                  method: "jugador.by_team"
+                  params:
+                    id_equipo: 42
+                  id: 6
+              equipoList:
+                summary: listar equipos
+                value:
+                  jsonrpc: "2.0"
+                  method: "equipo.list"
+                  params: {}
+                  id: 7
+              equipoGet:
+                summary: obtener equipo por id
+                value:
+                  jsonrpc: "2.0"
+                  method: "equipo.get"
+                  params:
+                    id: 2
+                  id: 8
+              localidadList:
+                summary: listar localidades
+                value:
+                  jsonrpc: "2.0"
+                  method: "localidad.list"
+                  params: {}
+                  id: 9
+              localidadGet:
+                summary: obtener localidad por id
+                value:
+                  jsonrpc: "2.0"
+                  method: "localidad.get"
+                  params:
+                    id: 1
+                  id: 10
+      responses:
+        '200':
+          description: Respuesta JSON-RPC (success o error)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/JsonRpcSuccess'
+                  - $ref: '#/components/schemas/JsonRpcError'
+components:
+  schemas:
+    JsonRpcSuccess:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          example: "2.0"
+        result:
+          type: object
+        id:
+          oneOf:
+            - type: integer
+            - type: string
+      required: [jsonrpc, result, id]
+    JsonRpcError:
+      type: object
+      properties:
+        jsonrpc:
+          type: string
+          example: "2.0"
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+            message:
+              type: string
+        id:
+          oneOf:
+            - type: integer
+            - type: string
+      required: [jsonrpc, error, id]
+  variable:
+    - key: baseUrl
+      value: http://localhost:3000
+    - key: authToken
+      value: ''
+  item:
+    - name: partidos.list
+      request:
+        method: POST
+        header:
+          - key: Content-Type
+            value: application/json
+          - key: Authorization
+            value: '{{authToken}}'
+        body:
+          mode: raw
+          raw: '{"jsonrpc":"2.0","method":"partidos.list","params":{},"id":1}'
+        url:
+          raw: '{{baseUrl}}/rpc'
+          host:
+            - '{{baseUrl}}'
+          path:
+            - rpc
+    - name: partidos.get
+      request:
+        method: POST
+        header:
+          - key: Content-Type
+            value: application/json
+          - key: Authorization
+            value: '{{authToken}}'
+        body:
+          mode: raw
+          raw: '{"jsonrpc":"2.0","method":"partidos.get","params":{"id":1},"id":2}'
+        url:
+          raw: '{{baseUrl}}/rpc'
+          host:
+            - '{{baseUrl}}'
+          path:
+            - rpc
+    - name: partidos.resultados
+      request:
+        method: POST
+        header:
+          - key: Content-Type
+            value: application/json
+          - key: Authorization
+            value: '{{authToken}}'
+        body:
+          mode: raw
+          raw: '{"jsonrpc":"2.0","method":"partidos.resultados","params":{},"id":3}'
+        url:
+          raw: '{{baseUrl}}/rpc'
+          host:
+            - '{{baseUrl}}'
+          path:
+            - rpc
+    - name: jugador.list
+      request:
+        method: POST
+        header:
+          - key: Content-Type
+            value: application/json
+          - key: Authorization
+            value: '{{authToken}}'
+        body:
+          mode: raw
+          raw: '{"jsonrpc":"2.0","method":"jugador.list","params":{},"id":4}'
+        url:
+          raw: '{{baseUrl}}/rpc'
+          host:
+            - '{{baseUrl}}'
+          path:
+            - rpc
+    - name: jugador.get
+      request:
+        method: POST
+        header:
+          - key: Content-Type
+            value: application/json
+          - key: Authorization
+            value: '{{authToken}}'
+        body:
+          mode: raw
+          raw: '{"jsonrpc":"2.0","method":"jugador.get","params":{"id":10},"id":5}'
+        url:
+          raw: '{{baseUrl}}/rpc'
+          host:
+            - '{{baseUrl}}'
+          path:
+            - rpc
+    - name: jugador.by_team
+      request:
+        method: POST
+        header:
+          - key: Content-Type
+            value: application/json
+          - key: Authorization
+            value: '{{authToken}}'
+        body:
+          mode: raw
+          raw: '{"jsonrpc":"2.0","method":"jugador.by_team","params":{"id_equipo":42},"id":6}'
+        url:
+          raw: '{{baseUrl}}/rpc'
+          host:
+            - '{{baseUrl}}'
+          path:
+            - rpc
+    - name: equipo.list
+      request:
+        method: POST
+        header:
+          - key: Content-Type
+            value: application/json
+          - key: Authorization
+            value: '{{authToken}}'
+        body:
+          mode: raw
+          raw: '{"jsonrpc":"2.0","method":"equipo.list","params":{},"id":7}'
+        url:
+          raw: '{{baseUrl}}/rpc'
+          host:
+            - '{{baseUrl}}'
+          path:
+            - rpc
+    - name: equipo.get
+      request:
+        method: POST
+        header:
+          - key: Content-Type
+            value: application/json
+          - key: Authorization
+            value: '{{authToken}}'
+        body:
+          mode: raw
+          raw: '{"jsonrpc":"2.0","method":"equipo.get","params":{"id":2},"id":8}'
+        url:
+          raw: '{{baseUrl}}/rpc'
+          host:
+            - '{{baseUrl}}'
+          path:
+            - rpc
+    - name: localidad.list
+      request:
+        method: POST
+        header:
+          - key: Content-Type
+            value: application/json
+          - key: Authorization
+            value: '{{authToken}}'
+        body:
+          mode: raw
+          raw: '{"jsonrpc":"2.0","method":"localidad.list","params":{},"id":9}'
+        url:
+          raw: '{{baseUrl}}/rpc'
+          host:
+            - '{{baseUrl}}'
+          path:
+            - rpc
+    - name: localidad.get
+      request:
+        method: POST
+        header:
+          - key: Content-Type
+            value: application/json
+          - key: Authorization
+            value: '{{authToken}}'
+        body:
+          mode: raw
+          raw: '{"jsonrpc":"2.0","method":"localidad.get","params":{"id":1},"id":10}'
+        url:
+          raw: '{{baseUrl}}/rpc'
+          host:
+            - '{{baseUrl}}'
+          path:
+            - rpc

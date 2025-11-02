@@ -1,30 +1,9 @@
-# README
+# Flujo de uso 
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Flujo típico en tu app:
 
-Things you may want to cover:
-
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
-# mcp-server-ruby_on_rails
-# mcp-server-ruby_on_rails
-# mcp-server-ruby_on_rails
-# mcp-server-ruby_on_rails
-# mcp-server-ruby_on_rails
-# mcp-server-ruby_on_rails
+RpcController recibe llamada JSON-RPC.
+Pasa token y parámetros a MCPService.
+MCPService registra la spec (si no se ha registrado) y envía input al modelo vía SDK.
+El modelo decide y (si usa la herramienta) el SDK ejecuta la llamada a tu API Gateway según la spec.
+Si el SDK no soporta esa integración, MCPService hace la llamada HTTP directamente (fallback).
