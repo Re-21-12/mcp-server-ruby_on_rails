@@ -1,26 +1,16 @@
 # app/controllers/rpc_controller.rb
-require 'jsonrpc2'
-begin
-  require 'jsonrpc2/server'
-rescue LoadError
-  Rails.logger.warn "jsonrpc2/server no disponible — comprobando constantes expuestas por la gema"
-end
 require 'json'
+require 'mcp'
 
 class RpcController < ApplicationController
-  # Intentar desactivar CSRF; si no existe el callback, ignorar el error
-  begin
-    skip_before_action :verify_authenticity_token
-  rescue ArgumentError
-    Rails.logger.debug "verify_authenticity_token no definido, no se aplica skip_before_action"
-  end
+  skip_before_action :verify_authenticity_token rescue nil
 
   def handle
     body = request.body.read
     payload = JSON.parse(body) rescue nil
 
-    unless payload.is_a?(Hash) && payload['jsonrpc'] == '2.0' && payload['method'].is_a?(String)
-      render json: { jsonrpc: '2.0', error: { code: -32600, message: 'Invalid Request' }, id: payload && payload['id'] }, status: 400 and return
+    unless valid_jsonrpc?(payload)
+      render json: error_response(nil, -32600, 'Invalid Request'), status: 400 and return
     end
 
     id     = payload['id']
@@ -28,28 +18,75 @@ class RpcController < ApplicationController
     params = payload['params'] || {}
     token  = request.headers['Authorization']
 
-    methods = {
-      'partidos.list'       => ->(p){ Api::PartidoService.new(token: token).list },
-      'partidos.get'        => ->(p){ Api::PartidoService.new(token: token).get_by_id(p['id']) },
-      'partidos.resultados' => ->(p){ Api::PartidoService.new(token: token).resultados },
-      'jugador.list'        => ->(p){ Api::JugadorService.new(token: token).list },
-      'jugador.get'         => ->(p){ Api::JugadorService.new(token: token).get_by_id(p['id']) },
-      'jugador.by_team'     => ->(p){ Api::JugadorService.new(token: token).by_team(p['id_equipo']) },
-      'equipo.list'         => ->(p){ Api::EquipoService.new(token: token).list },
-      'equipo.get'          => ->(p){ Api::EquipoService.new(token: token).get_by_id(p['id']) },
-      'localidad.list'      => ->(p){ Api::LocalidadService.new(token: token).list },
-      'localidad.get'       => ->(p){ Api::LocalidadService.new(token: token).get_by_id(p['id']) }
-    }
+    # --- Implementar métodos MCP estándar ---
+    case method
+    when 'mcp.initialize'
+      result = {
+        serverInfo: {
+          name: 'corazondeseda_mcp',
+          version: '1.0.0'
+        },
+        capabilities: {
+          tools: {},
+          prompts: {},
+          resources: {}
+        }
+      }
 
-    handler = methods[method]
-    unless handler
-      render json: { jsonrpc: '2.0', error: { code: -32601, message: 'Method not found' }, id: id }, status: 404 and return
+    when 'mcp.list_tools'
+      result = [
+        { name: 'api_gateway', description: 'Llama endpoints del API Gateway principal' },
+        { name: 'partidos.resultados', description: 'Lista resultados de partidos' }
+      ]
+
+    when 'mcp.call_tool'
+      tool = params['name']
+      input = params['arguments'] || {}
+      result = call_tool(tool, input, token)
+
+    # --- Métodos JSON-RPC personalizados (compatibilidad legacy) ---
+    else
+      result = legacy_rpc_call(method, params, token)
     end
 
-    result = handler.call(params)
     render json: { jsonrpc: '2.0', result: result, id: id }
+
   rescue => e
     Rails.logger.error e.full_message
-    render json: { jsonrpc: '2.0', error: { code: -32000, message: e.message }, id: (defined?(id) ? id : nil) }, status: 500
+    render json: error_response(id, -32000, e.message), status: 500
+  end
+
+  private
+
+  def valid_jsonrpc?(payload)
+    payload.is_a?(Hash) && payload['jsonrpc'] == '2.0' && payload['method'].is_a?(String)
+  end
+
+  def error_response(id, code, message)
+    { jsonrpc: '2.0', error: { code: code, message: message }, id: id }
+  end
+
+  # --- Integración con tus servicios actuales ---
+  def call_tool(name, args, token)
+    case name
+    when 'partidos.resultados'
+      Api::PartidoService.new(token: token).resultados
+    when 'jugador.list'
+      Api::JugadorService.new(token: token).list
+    when 'api_gateway'
+      MCPService.new.call_api_gateway(args['method'], args['path'], payload: args['payload'])
+    else
+      raise "Tool '#{name}' not found"
+    end
+  end
+
+  def legacy_rpc_call(method, params, token)
+    mapping = {
+      'partidos.list'       => ->(p){ Api::PartidoService.new(token: token).list },
+      'partidos.get'        => ->(p){ Api::PartidoService.new(token: token).get_by_id(p['id']) },
+      'jugador.list'        => ->(p){ Api::JugadorService.new(token: token).list }
+    }
+    handler = mapping[method]
+    handler ? handler.call(params) : raise("Method #{method} not found")
   end
 end

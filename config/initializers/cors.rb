@@ -14,3 +14,12 @@
 #       methods: [:get, :post, :put, :patch, :delete, :options, :head]
 #   end
 # end
+Rails.application.config.middleware.insert_before 0, Rack::Cors do
+  allow do
+    origins 'https://app.corazondeseda.lat', 'http://localhost:4200'
+    resource '*',
+      headers: :any,
+      methods: [:get, :post, :options],
+      expose: ['Authorization']
+  end
+end
