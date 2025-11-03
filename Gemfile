@@ -8,7 +8,7 @@ gem "sqlite3", ">= 2.1"
 gem "puma", ">= 5.0"
 # Build JSON APIs with ease [https://github.com/rails/jbuilder]
 # JSON-RPC 2.0 server and client implementation for Ruby [
-gem 'jsonrpc2', '~> 0.3'
+gem "jsonrpc2", "~> 0.3"
 
 # gem "jbuilder"
 
@@ -32,16 +32,18 @@ gem "kamal", require: false
 # Add HTTP asset caching/compression and X-Sendfile acceleration to Puma [https://github.com/basecamp/thruster/]
 gem "thruster", require: false
 
-#  
-gem 'faraday'
-gem 'faraday_middleware'
+#
+gem "faraday"
+gem "faraday_middleware"
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 1.2"
 
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 # gem "rack-cors"
-gem 'rack-cors'
+gem "rack-cors"
 
+gem "rswag"
+gem "mcp"
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
@@ -54,7 +56,4 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
-
-  gem 'rswag'
-  gem 'mcp'
 end
