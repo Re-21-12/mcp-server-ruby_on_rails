@@ -11,6 +11,7 @@ Rails.application.routes.draw do
 
   # --- JSON-RPC ---
   post "/rpc", to: "rpc#handle"
+  post "/llm/chat", to: "llm#chat"
 
   # --- API REST ---
   scope "/api" do
