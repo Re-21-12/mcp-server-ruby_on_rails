@@ -1,7 +1,7 @@
 require 'faraday'
 require 'json'
 
-class MCPService
+class McpService
   def initialize(client: default_client, api_spec_path: default_api_spec_path)
     @client = client
     @api_spec_path = api_spec_path
