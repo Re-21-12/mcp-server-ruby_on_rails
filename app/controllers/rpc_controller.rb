@@ -3,7 +3,15 @@ require "json"
 require "mcp"
 
 class RpcController < ApplicationController
-  skip_before_action :verify_authenticity_token
+  # desactivar verificación CSRF solo si está definida (soporta ActionController::API)
+  if respond_to?(:skip_before_action)
+    if _process_action_callbacks.map(&:filter).include?(:verify_authenticity_token)
+      skip_before_action :verify_authenticity_token
+    elsif respond_to?(:skip_forgery_protection)
+      # Rails >=7 way para desactivar protección por controlador
+      skip_forgery_protection
+    end
+  end
 
   def handle
     payload = JSON.parse(request.body.read) rescue {}
