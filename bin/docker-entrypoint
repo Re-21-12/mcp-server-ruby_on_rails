@@ -1,5 +1,10 @@
 #!/bin/bash -e
 
+# Ensure SECRET_KEY_BASE exists in production containers
+if [ -z "${SECRET_KEY_BASE:-}" ]; then
+  export SECRET_KEY_BASE=$(bin/rails secret)
+fi
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare
