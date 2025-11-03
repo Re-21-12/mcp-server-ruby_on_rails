@@ -2,7 +2,7 @@ require "net/http"
 require "json"
 
 class LlmService
-  def initialize(ollama_url = ENV["OLLAMA_URL"], model = ENV["OLLAMA_MODEL"] || "phi3:mini")
+  def initialize(ollama_url = ENV["OLLAMA_URL"], model = ENV["OLLAMA_MODEL"] || "llama.3.2:1b")
     @url = ollama_url
     @model = model
   end
