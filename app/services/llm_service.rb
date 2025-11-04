@@ -71,39 +71,48 @@ class LlmService
 
     uri, req =
       if openrouter?
+        # Si existe el middleware OpenRouterAgentService lo usamos para manejar tools y llamadas al MCP
+        if defined?(OpenRouterAgentService)
+          return OpenRouterAgentService.new(model: @model).chat(prompt)
+        end
+
         raise "OPENROUTER_API_KEY no configurada" unless ENV["OPENROUTER_API_KEY"].present?
         uri = URI(ENV["OPENROUTER_URL"] || "https://openrouter.ai/api/v1/chat/completions")
         req = Net::HTTP::Post.new(uri)
         req["Content-Type"] = "application/json"
         req["Authorization"] = "Bearer #{ENV['OPENROUTER_API_KEY']}"
 
-        # Si se solicita incluir tools (formato OpenRouter/OpenAI function-calling),
-        # obtenemos las tools registradas desde McpService y las mapeamos.
+        # Por defecto incluimos tools (formato OpenRouter/OpenAI function-calling) construidas
+        # desde McpService.registered_tools, pero se pueden desactivar pasando
+        # `include_tools: false` en options.
         body = { model: @model, messages: messages }
-        if options[:include_tools]
+        include_tools_flag = options.key?(:include_tools) ? !!options[:include_tools] : true
+        if include_tools_flag
           begin
             mcp = McpService.new
             reg = mcp.registered_tools || []
             functions = reg.map do |t|
               raw = t[:raw] rescue nil
-              name = t[:name] || (raw.respond_to?(:name) ? raw.name : raw.to_s)
-              description = (raw.respond_to?(:description) ? raw.description : t[:description]) || ""
-              # parameters: intentar obtener la estructura esperada por OpenAI-like tools
+              name = (t[:name] || (raw.respond_to?(:name) ? raw.name : raw.to_s)).to_s
+              description = (raw && raw.respond_to?(:description)) ? raw.description : (t[:description] || "")
+
               params = if raw && raw.respond_to?(:parameters)
-                # ApiServiceTool#parameters devuelve algo como { params: { type: 'object', ... } }
                 p = raw.parameters
-                # si tiene key :params, usar ese objeto; si ya tiene la forma, usar tal cual
                 p.is_a?(Hash) ? (p[:params] || p["params"] || p) : {}
+              elsif t[:parameters] || t["parameters"]
+                t[:parameters] || t["parameters"]
               else
                 {}
               end
 
+              params = { "type" => "object" } if params.nil? || params.empty?
+
               {
-                type: "function",
-                function: {
-                  name: name,
-                  description: description,
-                  parameters: params
+                "type" => "function",
+                "function" => {
+                  "name" => name,
+                  "description" => description,
+                  "parameters" => params
                 }
               }
             end
