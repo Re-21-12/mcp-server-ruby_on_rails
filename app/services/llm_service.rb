@@ -20,7 +20,8 @@ class LlmService
     @model = resolve_model(model)
   end
 
-  def chat(prompt)
+  # options: { show_tools: true } -> when provider=="mcp" returns { result: ..., tools: [...] }
+  def chat(prompt, options = {})
     messages = [
       { role: "system", content: "Eres un asistente útil y conciso." },
       { role: "user", content: prompt }
@@ -39,16 +40,28 @@ class LlmService
           # si no se puede registrar no rompemos; seguiremos con la llamada al modelo
         end
 
+        # log de tools registradas (útil para debugging)
+        begin
+          tools = mcp.registered_tools rescue []
+          logger = defined?(Rails) && Rails.respond_to?(:logger) ? Rails.logger : nil
+          logger.info("[LLM][MCP] registered tools: #{tools.map { |t| t[:name] rescue t }.inspect}") if logger
+        rescue => _e
+          # no bloquear por logging
+        end
+
         payload = { model: @model, messages: messages }
         res = mcp.call_model(payload)
 
         # Normalizar respuestas comunes (estilo OpenAI/OpenRouter o SDK)
-        if res.is_a?(Hash)
+        final = if res.is_a?(Hash)
           # OpenRouter/OpenAI style
-          return res.dig("choices", 0, "message", "content") || res.dig("message", "content") || res
+          res.dig("choices", 0, "message", "content") || res.dig("message", "content") || res
+        else
+          res
         end
 
-        return res
+        # si el caller pidió ver las tools, devolvemos ambas cosas
+        return options[:show_tools] ? { result: final, tools: (tools || []) } : final
       rescue => e
         # si falla el camino MCP, caemos al backend tradicional
         logger = defined?(Rails) && Rails.respond_to?(:logger) ? Rails.logger : nil

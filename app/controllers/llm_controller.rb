@@ -10,12 +10,14 @@ class LlmController < ApplicationController
 
   # POST /llm/chat
   def chat
-    payload = parse_json_request || {}
-    prompt = payload["prompt"].to_s
-    return render(json: { error: "Missing prompt" }, status: :bad_request) if prompt.blank?
+  payload = parse_json_request || {}
+  prompt = payload["prompt"].to_s
+  return render(json: { error: "Missing prompt" }, status: :bad_request) if prompt.blank?
 
-    result = LlmService.new.chat(prompt)
-    render json: result
+  show_tools = payload.key?("show_tools") ? !!payload["show_tools"] : false
+
+  result = LlmService.new.chat(prompt, show_tools: show_tools)
+  render json: result
   rescue => e
     render json: { error: e.message }, status: :bad_gateway
   end

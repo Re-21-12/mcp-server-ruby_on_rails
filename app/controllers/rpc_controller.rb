@@ -20,11 +20,14 @@ class RpcController < ApplicationController
 
     case method
     when "mcp.chat", "llm.chat"
-      prompt = extract_prompt_from_params(payload["params"])
+      params_hash = payload["params"] || {}
+      prompt = extract_prompt_from_params(params_hash)
       return render json: jsonrpc_error(id, -32602, "Missing prompt"), status: :bad_request if prompt.blank?
 
+      show_tools = params_hash.key?("show_tools") ? !!params_hash["show_tools"] : false
+
       begin
-        result = LlmService.new.chat(prompt)
+        result = LlmService.new.chat(prompt, show_tools: show_tools)
         render json: { jsonrpc: "2.0", id: id, result: result }
       rescue => e
         logger.error "[RPC][LLM] #{e.class}: #{e.message}\n#{e.backtrace.join("\n")}"
